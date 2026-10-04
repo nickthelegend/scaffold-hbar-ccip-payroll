@@ -1,0 +1,9 @@
+packages/foundry/lib
+packages/foundry/out
+packages/foundry/cache
+packages/foundry/broadcast
+.harness/runs
+.harness/runtime
+.harness/cache
+**/.next
+**/node_modules

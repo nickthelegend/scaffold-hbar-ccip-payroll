@@ -12,7 +12,7 @@ A [Scaffold-HBAR](https://github.com/hedera-dev/scaffold-hbar) template for recu
 npm create scaffold-hbar@latest -- --template nickthelegend/scaffold-hbar-ccip-payroll
 ```
 
-**Live:** [scaffold-hbar-ccip-payroll.vercel.app](https://scaffold-hbar-ccip-payroll.vercel.app) · contract [`{{CONTRACT_ID}}`](https://hashscan.io/testnet/contract/{{CONTRACT_ID}}) on Hedera testnet · every run below was executed by the network on schedule
+**Live:** [scaffold-hbar-ccip-payroll.vercel.app](https://scaffold-hbar-ccip-payroll.vercel.app) · contract [`0.0.10857223`](https://hashscan.io/testnet/contract/0.0.10857223) on Hedera testnet · every run below was executed by the network on schedule
 **Demo video:** _coming soon_ <!-- paste a GitHub user-attachments, YouTube or Loom URL here -->
 
 | Payee | Paid on | How |
@@ -87,7 +87,28 @@ See [Run your own payroll](#run-your-own-payroll): deploy, add payees, fund, sta
 
 ## Live on Hedera testnet
 
-{{PROOF}}
+Everything below happened on Hedera testnet and was checked on the mirror node, the CCIP explorer and the destination chains. The dashboard shows the same data live.
+
+### Deployment
+
+| What | Where |
+|---|---|
+| `CrossChainPayroll` | [`0.0.10857223`](https://hashscan.io/testnet/contract/0.0.10857223) · `0x6fdBbd691bfd6ab33Fbde4820109140a13dBEE49` · deploy [tx](https://hashscan.io/testnet/transaction/0x8911ccf8a8235f075764500ca954a6cfd2358f910852c8d86e8d4f482f61d499) · [Sourcify](https://sourcify.dev/server/v2/contract/296/0x6fdBbd691bfd6ab33Fbde4820109140a13dBEE49) |
+| Payout token | CCIP-BnM [`0xF8238FD7…bEb1`](https://hashscan.io/testnet/contract/0xF8238FD7Dd2bEbEDaa65c3974175d98e6110bEb1) |
+| CCIP router | [`0x802C5F84…7Ce4`](https://hashscan.io/testnet/contract/0x802C5F84eAD128Ff36fD6a3f8a418e339f467Ce4) (Router 1.2.0, [CCIP directory](https://docs.chain.link/ccip/directory/testnet/chain/hedera-testnet)) |
+| Payees | Alice `0xad7B4939…2A4E` on OP Sepolia ([tx](https://hashscan.io/testnet/transaction/0x6b966155b6f7c3e1ec7c011eb797e2c09efb670c684d4a8593f8d67767255181)), Carol `0x4Cc1ED8A…0dfA` on Ethereum Sepolia ([tx](https://hashscan.io/testnet/transaction/0xd60a183c7e33015c3471d465896da768cf695265310996cf20f04ef0209b0c2f)), Bob `0x7121C972…2481` on Hedera ([tx](https://hashscan.io/testnet/transaction/0x4587b7f3be52367496ade32ee816e4affd28c37035360e863f596a8c4730996a)) |
+| Funding | 1 CCIP-BnM from the faucet ([tx](https://hashscan.io/testnet/transaction/0x745a60ccf484562e6d7e08851bd46aaf197a99e9a6d73a30dd198d852e52431b)), 75 HBAR for fees ([tx](https://hashscan.io/testnet/transaction/0xd381dd5d2e6549afa451bf6947c1b7bdeb82cd72e25d1d05ccc359acb3b465a0)) |
+| `start` | [tx](https://hashscan.io/testnet/transaction/0xbc4bf0aa6c88b5ef1778eef3282ba62e13cf879d82890cf729b121922a159efc) created schedule [`0.0.10857234`](https://hashscan.io/testnet/schedule/0.0.10857234) |
+
+### Runs executed by the network
+
+| Run | Executed by | Payouts | CCIP delivery |
+|---|---|---|---|
+| **#1** · [tx](https://hashscan.io/testnet/transaction/0xb00efb64bcbac387a71c135eb3aea3b8431e77c7f72214136417ab321d93a1d2) · 2.24M gas of 2.56M | schedule [`0.0.10857234`](https://hashscan.io/testnet/schedule/0.0.10857234) at its exact second; `byScheduleService = true` | Alice 0.1 → **OP Sepolia** (fee 2.56 ℏ) · Carol 0.1 → **Ethereum Sepolia** (fee 36.26 ℏ) · Bob 0.05 → **Hedera** | [`0xe35ad7cf…`](https://ccip.chain.link/msg/0xe35ad7cfc6410d7f7c330b291018011bea0c58c6c3ea6ab473036337c9261142) ✓ [OP Sepolia tx](https://sepolia-optimism.etherscan.io/tx/0xc889a9f763cc347c2ea1168733653482050d493b4a63e1e6524a63c4b4021b7f) · [`0xf8b3e885…`](https://ccip.chain.link/msg/0xf8b3e8850c2f29cbe0d58131fea80fe974520aac472f24a7110b4a92817a74b7) ✓ [Sepolia tx](https://sepolia.etherscan.io/tx/0x9c1c2baec2660c8fa1073974e785c60649647b965d0abb59df555a16ef5b907b) |
+| **#2** · [tx](https://hashscan.io/testnet/transaction/0x55115136f70a47b4d766857e2ecce8d92c9575a091ac332ca3bf70b3f893be69) | schedule [`0.0.10857251`](https://hashscan.io/testnet/schedule/0.0.10857251), which run #1 created; `byScheduleService = true` | Alice 0.1 → OP Sepolia · Bob 0.05 → Hedera (Carol [paused](https://hashscan.io/testnet/transaction/0xa442dde033e54393d060da80480c44ff3d1ee9f263d5cf6dbb4271d4cd7b57a4) to save the 36 ℏ fee) | [`0xb48c72b4…`](https://ccip.chain.link/msg/0xb48c72b4ac88ec6402384c8d748979804bc91c7d0149f30eea70ed284be3d6e8) ✓ [OP Sepolia tx](https://sepolia-optimism.etherscan.io/tx/0x32b873943f14c723c7c1809733b949593e99901cace743548d921470c20c6120) |
+| **#3** | schedule [`0.0.10857371`](https://hashscan.io/testnet/schedule/0.0.10857371), pending for 11 Oct 2026 13:06 UTC (the interval was [set to weekly](https://hashscan.io/testnet/transaction/0x1ca52531fcc7945dea91c4916668ef987c2d6111d8c1df46b11327b6fcbc1676)) | Alice → OP Sepolia · Bob → Hedera | — |
+
+Nobody sent runs #1 and #2: each was the scheduled call the previous transaction left with the Schedule Service. Balances afterwards: Alice holds 0.2 CCIP-BnM on [OP Sepolia](https://sepolia-optimism.etherscan.io/token/0x8af4204e30565df93352fe8e1de78925f6664da7?a=0xad7B4939Fe1d6ee776FB9Effc541351608752A4E), Carol 0.1 on [Ethereum Sepolia](https://sepolia.etherscan.io/token/0xFd57b4ddBf88a4e07fF4e34C487b99af2Fe82a05?a=0x4Cc1ED8A3501C8eD5Bfb81Bff7dd8F21FC9C0dfA), Bob 0.1 on Hedera.
 
 ## How it works
 
