@@ -15,7 +15,7 @@ Briefing for coding agents (Claude Code, Cursor, Codex) working in a **CCIP Payr
 
 ```bash
 yarn install
-yarn lint                 # ESLint + forge fmt --check + prettier + tsc
+yarn lint                 # ESLint + forge fmt --check + prettier (types: yarn next:check-types)
 yarn test                 # foundry + frontend unit tests
 
 yarn foundry:compile
@@ -37,7 +37,7 @@ Before finishing any change run `yarn foundry:test`, `yarn next:test`, `yarn nex
 
 1. **Units.** Payout amounts use the payout token's decimals (CCIP-BnM: 18). HBAR inside the EVM (CCIP fees from `getFee`, `quoteRun().ccipFees`, `withdraw(address(0), …)`) is **tinybars** (8 decimals). A wallet transaction's `value` and `eth_getBalance` are **weibars** (18 decimals): tinybars × 1e10. Keep conversions in the frontend's pure unit helpers; never hand-roll them in components.
 2. **A payout never reverts a run.** Every failure (tokens, HBAR, quote, send, a token refusing a Hedera transfer) emits `PayoutSkipped` with a reason. A run that reverted inside the Schedule Service would also lose the next schedule, so keep `ccipSend` and `getFee` inside `try`/`catch`, keep the Hedera transfer a low-level call, and reset the router allowance after a failed send. `quoteRun` reports lanes it cannot quote (`unquoted`) instead of reverting.
-3. **Scheduling is best effort and measured.** `_scheduleNextRun` uses low-level calls and emits `ScheduleFailed` instead of reverting; `run` stays permissionless once due. Creating a schedule costs a flat ~1.41M gas regardless of the scheduled call's limit (`SCHEDULE_NEXT_GAS`), and Hedera bills at least 80% of a gas limit, so `runGasLimit()` adds measured per-payout costs. Re-measure on testnet (mirror node `…/contracts/results/<tx>/actions`) if you change `run`, and do not pad.
+3. **Scheduling is best effort and measured.** `_scheduleNextRun` uses low-level calls and emits `ScheduleFailed` instead of reverting; `run` stays permissionless once due. Creating a schedule costs a flat ~1.41M gas regardless of the scheduled call's limit (measured; `SCHEDULE_NEXT_GAS` budgets 1.45M), and Hedera bills at least 80% of a gas limit, so `runGasLimit()` adds measured per-payout costs. Re-measure on testnet (mirror node `…/contracts/results/<tx>/actions`) if you change `run`, and do not pad.
 4. **Schedule timing.** Runs are scheduled at `nextRunAt + SCHEDULE_DELAY`: inside a scheduled execution `block.timestamp` is the start of the ~2 s block and can read before the scheduled second. A scheduled run is recognised by its caller (`msg.sender == address(this)`), which is how `RunExecuted.byScheduleService` is set and why it does not try to delete its own schedule.
 5. **One pending schedule, with the right budget.** A manual run before the schedule's second deletes that schedule; `pause` deletes it; `start` replaces it. Never leave a schedule that would fire into `NotDue` and burn the fee. A schedule keeps the gas limit it was created with, so `addPayee`/`updatePayee` call `_rebudgetPendingRun`, which replaces the pending schedule when `runGasLimit()` no longer equals `scheduledGasLimit` (those owner calls then cost ~1.7M gas). Keep that for any new function that changes the active payee set.
 6. **Owner powers are bounded.** The owner manages payees and the schedule and can withdraw the treasury. Anyone may trigger a due run but cannot change who is paid or how much. Do not add functions that let a caller pick recipients or amounts at run time.
