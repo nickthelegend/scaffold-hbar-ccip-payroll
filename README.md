@@ -52,7 +52,7 @@ The template is the smallest complete version of that: a contract you can read i
 
 ### Prerequisites
 
-- Node.js ≥ 20.19 and Yarn (via `corepack enable`)
+- Node.js 22 LTS (≥ 20.19 works) and Yarn (via `corepack enable`)
 - [Foundry](https://book.getfoundry.sh/getting-started/installation) **1.7.x** (`foundryup -i v1.7.1`). Forge 1.8+ sends block tags in a form Hedera's JSON-RPC relay rejects, which breaks the fork tests.
 - For deploying your own: a funded Hedera testnet ECDSA account ([faucet](https://portal.hedera.com/faucet))
 
