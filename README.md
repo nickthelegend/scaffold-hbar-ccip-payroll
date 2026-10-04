@@ -13,7 +13,7 @@ npm create scaffold-hbar@latest -- --template nickthelegend/scaffold-hbar-ccip-p
 ```
 
 **Live:** [scaffold-hbar-ccip-payroll.vercel.app](https://scaffold-hbar-ccip-payroll.vercel.app) · contract [`0.0.10857591`](https://hashscan.io/testnet/contract/0.0.10857591) on Hedera testnet · every run below was executed by the network on schedule
-**Demo video:** _coming soon_ <!-- paste a GitHub user-attachments, YouTube or Loom URL here -->
+**Demo video:** [watch (73 s)](https://ccip-payroll-demo.vercel.app) · [mp4](https://ccip-payroll-demo.vercel.app/ccip-payroll-demo.mp4)
 
 | Payee | Paid on | How |
 |---|---|---|
