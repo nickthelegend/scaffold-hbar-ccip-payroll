@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-hbar/contract";
 const deployedContracts = {
   296: {
     CrossChainPayroll: {
-      address: "0x6fdbbd691bfd6ab33fbde4820109140a13dbee49",
+      address: "0x5773b878d97e243a011af1ce16bcbcc87968f468",
       abi: [
         {
           type: "constructor",
@@ -387,6 +387,11 @@ const deployedContracts = {
               type: "uint256",
               internalType: "uint256",
             },
+            {
+              name: "unquoted",
+              type: "uint256",
+              internalType: "uint256",
+            },
           ],
           stateMutability: "view",
         },
@@ -459,6 +464,19 @@ const deployedContracts = {
         {
           type: "function",
           name: "scheduledAt",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "scheduledGasLimit",
           inputs: [],
           outputs: [
             {
@@ -990,7 +1008,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 41347273,
+      deployedOnBlock: 41348378,
     },
   },
 } as const;

@@ -20,7 +20,7 @@ const Home: NextPage = () => {
   return (
     <div className="flex flex-col grow lg:pb-20">
       <section className="hedera-gradient dark:bg-none dark:bg-hedera-charcoal text-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-5 py-12 space-y-5">
+        <div className="max-w-5xl mx-auto px-4 sm:px-5 py-12 flex flex-col gap-5">
           <p className="uppercase tracking-[0.2em] text-xs text-white/70 m-0">CCIP Payroll · Scaffold-HBAR template</p>
           <h1 className="text-3xl md:text-5xl font-bold leading-tight m-0 max-w-3xl">
             Payroll from Hedera to any chain, with no keeper.
@@ -58,7 +58,7 @@ const Home: NextPage = () => {
         ) : (
           <div role="alert" className="alert alert-warning text-sm">
             CrossChainPayroll isn&apos;t deployed on {targetNetwork.name}. Switch to Hedera Testnet, or deploy it with{" "}
-            <code>yarn deploy --network hedera_testnet</code>.
+            <code>yarn foundry:deploy --network hedera_testnet</code>.
           </div>
         )}
       </div>

@@ -37,7 +37,7 @@
       "route": "/payee/[address]",
       "severity": "major",
       "statement": "A payee page lists every payout an address received, across chains.",
-      "howToVerify": "Open /payee/0xad7B4939Fe1d6ee776FB9Effc541351608752A4E. Its Ethereum Sepolia payouts are listed with amounts, CCIP status and links.",
+      "howToVerify": "Open /payee/0xad7B4939Fe1d6ee776FB9Effc541351608752A4E. Its OP Sepolia payouts are listed with amounts, CCIP status and destination links.",
       "walletRequired": false,
       "verifiableWithoutCredentials": true
     },
@@ -47,7 +47,7 @@
       "route": "/",
       "severity": "major",
       "statement": "Any connected wallet can top up the treasury with CCIP-BnM from the public faucet.",
-      "howToVerify": "Connect the burner wallet (funded testnet account), click 'Add 1 CCIP-BnM' on the Treasury card and confirm. The CCIP-BnM balance rises by 1 after the transaction.",
+      "howToVerify": "Connect the burner wallet and fund it with testnet HBAR (the harness's Tier 3.5 signer, or 'Get testnet HBAR'), click 'Add 1 CCIP-BnM' on the Treasury card and confirm. The CCIP-BnM balance rises by 1 after the transaction.",
       "walletRequired": true,
       "executableWithTestSigner": true
     }

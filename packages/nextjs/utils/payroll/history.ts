@@ -40,6 +40,7 @@ const SKIP_REASONS = [
   "Not enough HBAR in the treasury for the CCIP fee",
   "CCIP could not quote a fee for this lane",
   "The CCIP router rejected the transfer",
+  "The token refused the transfer on Hedera (e.g. the payee is not associated with an HTS token)",
 ];
 
 export const skipReasonText = (reason: number) => SKIP_REASONS[reason] ?? `Unknown reason (${reason})`;

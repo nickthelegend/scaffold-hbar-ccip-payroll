@@ -325,6 +325,19 @@ contract CrossChainPayrollTest is Test {
         assertEq(token.balanceOf(bob), TOKEN);
     }
 
+    function test_hederaPayoutRefusedByTheToken_isSkippedNotReverted() public {
+        token.refuse(bob);
+        uint256 firstRunAt = _start();
+        vm.warp(firstRunAt);
+
+        vm.expectEmit(address(payroll));
+        emit CrossChainPayroll.PayoutSkipped(1, 1, CrossChainPayroll.SkipReason.TransferFailed);
+        payroll.run();
+
+        assertEq(router.sentCount(), 1, "Alice still paid");
+        assertEq(payroll.nextRunAt(), firstRunAt + WEEK);
+    }
+
     function test_quoteFailure_isSkipped() public {
         uint256 firstRunAt = _start();
         router.setFailQuotes(true);
@@ -395,10 +408,52 @@ contract CrossChainPayrollTest is Test {
     }
 
     function test_quoteRun_sumsTokensAndCrossChainFees() public view {
-        (uint256 tokens, uint256 fees, uint256 gasLimit) = payroll.quoteRun();
+        (uint256 tokens, uint256 fees, uint256 gasLimit, uint256 unquoted) = payroll.quoteRun();
         assertEq(tokens, 3 * TOKEN);
         assertEq(fees, FEE);
         assertEq(gasLimit, payroll.runGasLimit());
+        assertEq(unquoted, 0);
+    }
+
+    function test_quoteRun_reportsLanesThatCannotBeQuotedInsteadOfReverting() public {
+        router.setFailQuotes(true);
+        (uint256 tokens, uint256 fees,, uint256 unquoted) = payroll.quoteRun();
+        assertEq(tokens, 3 * TOKEN);
+        assertEq(fees, 0);
+        assertEq(unquoted, 1);
+    }
+
+    /// @dev A pending schedule keeps the gas limit it was created with, so a bigger payroll must reschedule or the
+    ///      next run would run out of gas inside the Schedule Service.
+    function test_addingAPayeeWhileRunning_reschedulesWithTheNewBudget() public {
+        _start();
+        address pending = payroll.schedule();
+        uint256 before = payroll.scheduledGasLimit();
+
+        payroll.addPayee(stranger, SEPOLIA, TOKEN, "new hire");
+
+        assertTrue(hss.deleted(pending));
+        assertEq(payroll.scheduledGasLimit(), before + payroll.CCIP_PAYOUT_GAS());
+        (,, uint256 gasLimit,) = hss.scheduled(hss.count() - 1);
+        assertEq(gasLimit, payroll.runGasLimit());
+    }
+
+    function test_reactivatingAPayee_reschedules_butChangingAnAmountDoesNot() public {
+        payroll.updatePayee(0, 2 * TOKEN, false);
+        _start();
+        address pending = payroll.schedule();
+
+        payroll.updatePayee(1, 5 * TOKEN, true);
+        assertEq(payroll.schedule(), pending, "same budget, same schedule");
+
+        payroll.updatePayee(0, 2 * TOKEN, true);
+        assertTrue(hss.deleted(pending));
+        assertEq(payroll.scheduledGasLimit(), payroll.runGasLimit());
+    }
+
+    function test_payeeChangesWhilePaused_doNotSchedule() public {
+        payroll.addPayee(stranger, SEPOLIA, TOKEN, "new hire");
+        assertEq(hss.count(), 0);
     }
 
     /// @notice Whatever the amounts, a funded run pays exactly the active payees' amounts and nothing else.

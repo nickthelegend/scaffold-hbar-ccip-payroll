@@ -69,7 +69,8 @@ contract CrossChainPayroll is Ownable, ReentrancyGuard {
         InsufficientTokens,
         InsufficientHbar,
         QuoteFailed,
-        SendFailed
+        SendFailed,
+        TransferFailed
     }
 
     Payee[] internal _payees;
@@ -79,6 +80,8 @@ contract CrossChainPayroll is Ownable, ReentrancyGuard {
     bool public paused;
     /// @notice The Hedera schedule entity that will execute the next run (address(0) when none is pending).
     address public schedule;
+    /// @notice The gas limit `schedule` was created with. Payee changes that need a different budget reschedule.
+    uint256 public scheduledGasLimit;
     /// @notice The consensus second `schedule` executes at. Inside that execution `block.timestamp` can read up to ~2s
     ///         earlier (the start of its block), which is why scheduled runs are recognised by their caller instead.
     uint256 public scheduledAt;
@@ -153,6 +156,7 @@ contract CrossChainPayroll is Ownable, ReentrancyGuard {
             Payee({ account: account, chainSelector: chainSelector, active: true, amount: amount, label: label })
         );
         emit PayeeAdded(id, account, chainSelector, amount, label);
+        _rebudgetPendingRun();
     }
 
     /// @notice Change a payee's amount or pause them. To change where someone is paid, deactivate and add again.
@@ -162,6 +166,7 @@ contract CrossChainPayroll is Ownable, ReentrancyGuard {
         p.amount = amount;
         p.active = active;
         emit PayeeUpdated(id, amount, active);
+        _rebudgetPendingRun();
     }
 
     function setInterval(uint256 interval_) external onlyOwner {
@@ -256,13 +261,20 @@ contract CrossChainPayroll is Ownable, ReentrancyGuard {
     /// @notice What the next run will cost at current CCIP prices.
     /// @return tokens payout tokens the run sends
     /// @return ccipFees CCIP fees in tinybars (0 for Hedera payees)
-    /// @return gasLimit the gas limit the run is scheduled with
-    function quoteRun() external view returns (uint256 tokens, uint256 ccipFees, uint256 gasLimit) {
+    /// @return gasLimit the gas limit the next run needs
+    /// @return unquoted cross-chain payees the router would not quote right now (excluded from `ccipFees`; `run`
+    ///         would skip them with `QuoteFailed`)
+    function quoteRun() external view returns (uint256 tokens, uint256 ccipFees, uint256 gasLimit, uint256 unquoted) {
         for (uint256 id; id < _payees.length; ++id) {
             Payee storage p = _payees[id];
             if (!p.active || p.amount == 0) continue;
             tokens += p.amount;
-            if (p.chainSelector != HEDERA) ccipFees += router.getFee(p.chainSelector, _message(p));
+            if (p.chainSelector == HEDERA) continue;
+            try router.getFee(p.chainSelector, _message(p)) returns (uint256 fee) {
+                ccipFees += fee;
+            } catch {
+                ++unquoted;
+            }
         }
         gasLimit = runGasLimit();
     }
@@ -296,7 +308,13 @@ contract CrossChainPayroll is Ownable, ReentrancyGuard {
         }
 
         if (p.chainSelector == HEDERA) {
-            token.safeTransfer(p.account, p.amount);
+            // Low-level so a token that refuses the transfer (e.g. an HTS token the payee is not associated with)
+            // skips this payee instead of reverting everyone's run.
+            (bool ok, bytes memory ret) = address(token).call(abi.encodeCall(IERC20.transfer, (p.account, p.amount)));
+            if (!ok || (ret.length != 0 && !abi.decode(ret, (bool)))) {
+                emit PayoutSkipped(runId, id, SkipReason.TransferFailed);
+                return false;
+            }
             emit PayoutSent(runId, id, p.account, HEDERA, p.amount, bytes32(0), 0);
             return true;
         }
@@ -365,6 +383,7 @@ contract CrossChainPayroll is Ownable, ReentrancyGuard {
                 }
                 schedule = created;
                 scheduledAt = at;
+                scheduledGasLimit = gasLimit;
                 emit RunScheduled(at, created, gasLimit);
                 return;
             }
@@ -376,6 +395,15 @@ contract CrossChainPayroll is Ownable, ReentrancyGuard {
         (bool ok, bytes memory ret) =
             address(HSS).staticcall(abi.encodeCall(IHederaScheduleService.hasScheduleCapacity, (at, gasLimit)));
         return ok && ret.length >= 32 && abi.decode(ret, (bool));
+    }
+
+    /// @dev A pending schedule carries the gas limit it was created with. Adding or re-activating a payee would leave
+    ///      the next run short of gas (Hedera does not raise it), so replace the schedule when the budget changes.
+    function _rebudgetPendingRun() internal {
+        if (paused || schedule == address(0) || block.timestamp >= scheduledAt) return;
+        if (runGasLimit() == scheduledGasLimit) return;
+        _cancelSchedule();
+        _scheduleNextRun();
     }
 
     /// @dev Best effort: deleting a schedule that already executed or expired fails harmlessly.

@@ -47,7 +47,8 @@ contract CrossChainPayrollForkTest is Test {
     function test_realRouter_quotesTheRunInHbar() public {
         payroll.addPayee(sepoliaPayee, OP_SEPOLIA, 0.1e18, "op");
         payroll.addPayee(sepoliaPayee, ETHEREUM_SEPOLIA, 0.1e18, "sepolia");
-        (uint256 tokens, uint256 fee,) = payroll.quoteRun();
+        (uint256 tokens, uint256 fee,, uint256 unquoted) = payroll.quoteRun();
+        assertEq(unquoted, 0);
         assertEq(tokens, 0.2e18);
         assertGt(fee, 0);
         assertLt(fee, 500 * HBAR, "fee should be tinybars, not weibars");

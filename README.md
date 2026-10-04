@@ -52,7 +52,7 @@ The template is the smallest complete version of that: a contract you can read i
 
 ### Prerequisites
 
-- Node.js ≥ 20.18.3 and Yarn (via `corepack enable`)
+- Node.js ≥ 20.19 and Yarn (via `corepack enable`)
 - [Foundry](https://book.getfoundry.sh/getting-started/installation) **1.7.x** (`foundryup -i v1.7.1`). Forge 1.8+ sends block tags in a form Hedera's JSON-RPC relay rejects, which breaks the fork tests.
 - For deploying your own: a funded Hedera testnet ECDSA account ([faucet](https://portal.hedera.com/faucet))
 
@@ -68,7 +68,7 @@ The CLI installs dependencies and the Foundry libraries. In a git clone, run `ya
 ### 2. Run the tests
 
 ```bash
-yarn foundry:test                                     # 32 unit + fuzz tests (mock CCIP router and Schedule Service)
+yarn foundry:test                                     # 37 unit + fuzz tests (mock CCIP router, token registry and Schedule Service)
 yarn foundry:test:testnet --match-path "test/fork/*"  # the real CCIP router and token registry on a Hedera testnet fork
 yarn next:test                                        # run-history decoding, units, chains, CCIP status
 ```
@@ -79,7 +79,7 @@ yarn next:test                                        # run-history decoding, un
 yarn next:dev
 ```
 
-Open http://localhost:3000. It reads the live testnet payroll out of the box: treasury, cost per run and runway, the pending schedule with a countdown, payees, and every run with its CCIP messages and their delivery status. Connect the burner wallet (top right) and click **Add 1 CCIP-BnM** to top up the treasury from the public faucet.
+Open http://localhost:3000. It reads the live testnet payroll out of the box: treasury, cost per run and runway, the pending schedule with a countdown, payees, and every run with its CCIP messages and their delivery status. To try a write, connect the burner wallet (top right), fund it with **Get testnet HBAR** (it starts empty and needs gas), then click **Add 1 CCIP-BnM** to top up the treasury from the public faucet.
 
 ### 4. Deploy your own
 
@@ -141,7 +141,8 @@ sequenceDiagram
 3. **Each payee is paid on their chain.** Hedera payees get a token transfer. Cross-chain payees get a CCIP token-only message to their EOA (`data` empty, gas limit 0, out-of-order execution allowed), with the fee quoted by the router and paid in HBAR from the treasury.
 4. **Nothing stops the line.** If a payout can't be made (not enough tokens, not enough HBAR for the fee, or CCIP rejects it), the contract emits `PayoutSkipped` with the reason and carries on. One bad payee never blocks the others, and a run never reverts inside the Schedule Service, which would lose the next schedule.
 5. **The next run is scheduled.** `nextRunAt` moves forward by `interval` (or restarts from now if the run was late, so there are no catch-up storms), and `run()` schedules itself again.
-6. **Delivery.** CCIP commits and executes the message on the destination; the dashboard polls the CCIP explorer and shows Waiting → Success (or Failed) with the destination transaction.
+6. **Payee changes keep the budget right.** A schedule keeps the gas limit it was created with. When the owner adds or re-activates a payee (or deactivates one), the contract replaces the pending schedule with one budgeted for the new payee set, so the network never executes a run that is short of gas.
+7. **Delivery.** CCIP commits and executes the message on the destination; the dashboard polls the CCIP explorer and shows Waiting → Success (or Failed) with the destination transaction.
 
 ### Hedera services and integrations used
 
@@ -190,7 +191,7 @@ No server secrets are needed: the CCIP status route calls a public API.
 
 | Suite | Command | What it proves |
 |---|---|---|
-| Unit + fuzz (32) | `yarn foundry:test` | Scheduling (first run, next run, capacity failures, Schedule Service errors, manual runs deleting stale schedules, scheduled runs not deleting their own), payouts on Hedera and via CCIP (message shape, fee, tokens pulled), every skip reason with the others still paid, owner-only management, and a fuzz test that a funded run pays exactly the active amounts |
+| Unit + fuzz (37) | `yarn foundry:test` | Scheduling (first run, next run, capacity failures, Schedule Service errors, manual runs deleting stale schedules, scheduled runs not deleting their own, payee changes rebudgeting the pending run), payouts on Hedera and via CCIP (message shape, fee, tokens pulled), every skip reason with the others still paid (including a token refusing a Hedera transfer), lanes the token can't travel refused, owner-only management, and a fuzz test that a funded run pays exactly the active amounts |
 | Fork (2) | `yarn foundry:test:testnet --match-path "test/fork/*"` | Against the **real** router and TokenAdminRegistry: OP Sepolia and Ethereum Sepolia are accepted, Base Sepolia is refused (the router has the lane, the token's pool doesn't), and a run is quoted in tinybars of native HBAR |
 | Frontend | `yarn next:test` | Log decoding and run grouping (including a real mirror-node log), tinybar/weibar/token units, chain names, CCIP status mapping and the status route |
 | Live | [Live on Hedera testnet](#live-on-hedera-testnet) | Real scheduled runs, real CCIP deliveries |
@@ -215,7 +216,7 @@ For a real token, deploy with `PAYOUT_TOKEN=<token>` and check the token's pool 
 ## Hedera and CCIP specifics worth knowing
 
 - **Units.** HBAR inside the EVM (CCIP fees, `quoteRun`, `withdraw(address(0), …)`) is **tinybars** (8 decimals). A wallet transaction's `value` and `eth_getBalance` are **weibars** (18 decimals). The router's native fee comes back in tinybars, and the contract pays exactly that.
-- **Scheduling costs a flat ~1.41M gas.** Creating a schedule through `0x16b` costs about the same whatever the scheduled call's own gas limit, and Hedera bills at least 80% of a transaction's gas limit. So `runGasLimit()` adds measured per-payout costs to that and nothing more (a three-payee run uses ~2.4M of 2.56M).
+- **Scheduling costs a flat ~1.41M gas.** Creating a schedule through `0x16b` costs about the same whatever the scheduled call's own gas limit, and Hedera bills at least 80% of a transaction's gas limit. So `runGasLimit()` adds measured per-payout costs to that and nothing more (a three-payee run used 2.24M of its 2.56M budget on testnet).
 - **Scheduled `block.timestamp` lags.** Inside a scheduled execution `block.timestamp` is the start of the ~2 s block and can read before the scheduled second. Runs are therefore scheduled 10 s after `nextRunAt`, and a scheduled run is recognised by its caller rather than by time.
 - **Check the token's lanes, not just the router's.** The router lists every lane from Hedera; each token pool decides which of them the token can travel. Hedera testnet still registers an older CCIP-BnM (`0x01Ac…`) whose Ethereum Sepolia side rejects it (`InvalidSourcePoolAddress`), which is why this template uses `0xF823…` and checks the pool in `addPayee`.
 - **Mirror-node log queries** filtered by topic must cover ≤ 7 days and are paged with `links.next`.

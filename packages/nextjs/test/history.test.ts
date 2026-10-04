@@ -235,6 +235,7 @@ describe("skipReasonText", () => {
   it("explains every SkipReason in plain English", () => {
     expect(skipReasonText(0)).toMatch(/CCIP-BnM/);
     expect(skipReasonText(1)).toMatch(/HBAR/);
+    expect(skipReasonText(4)).toMatch(/associated/);
     expect(skipReasonText(9)).toBe("Unknown reason (9)");
   });
 });

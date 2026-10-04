@@ -39,7 +39,7 @@ export const TreasuryCard = ({ payroll }: { payroll: Address }) => {
 
   const failed = [tokenBalance, hbarBalance, quote, gasPrice].filter(read => read.isError && read.data === undefined);
   const hbarTinybars = hbarBalance.data ? weibarsToTinybars(hbarBalance.data.value) : undefined;
-  const [tokensPerRun, ccipFees, gasLimit] = quote.data ?? [];
+  const [tokensPerRun, ccipFees, gasLimit, unquoted] = quote.data ?? [];
   const hssFee =
     gasLimit !== undefined && gasPrice.data !== undefined ? scheduledRunFee(gasLimit, gasPrice.data) : undefined;
   const hbarPerRun = ccipFees !== undefined && hssFee !== undefined ? ccipFees + hssFee : undefined;
@@ -94,6 +94,12 @@ export const TreasuryCard = ({ payroll }: { payroll: Address }) => {
           )}
         </Stat>
       </dl>
+      {unquoted !== undefined && unquoted > 0n && (
+        <p className="text-xs text-warning m-0" role="status">
+          CCIP can&apos;t quote {unquoted.toString()} cross-chain payout{unquoted === 1n ? "" : "s"} right now, so the
+          cost above leaves {unquoted === 1n ? "it" : "them"} out; the run would skip {unquoted === 1n ? "it" : "them"}.
+        </p>
+      )}
       <FundTreasury payroll={payroll} />
     </Card>
   );
