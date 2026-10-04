@@ -1,0 +1,61 @@
+{
+  "name": "ccip-payroll-static",
+  "description": "Files and docs that must exist in a scaffolded CCIP Payroll project (template.json is consumed and removed by create-scaffold-hbar, so it is not checked here).",
+  "jsonAssertions": [
+    {
+      "file": "package.json",
+      "path": "packageManager",
+      "equals": "yarn@3.2.3"
+    }
+  ],
+  "fileAssertions": {
+    "required": [
+      "README.md",
+      "AGENTS.md",
+      "LICENCE",
+      "packages/foundry/contracts/CrossChainPayroll.sol",
+      "packages/foundry/contracts/ccip/Client.sol",
+      "packages/foundry/contracts/ccip/IRouterClient.sol",
+      "packages/foundry/test/CrossChainPayroll.t.sol",
+      "packages/foundry/test/fork/CrossChainPayrollFork.t.sol",
+      "packages/nextjs/app/payee/[address]/page.tsx",
+      "packages/nextjs/app/api/ccip/[messageId]/route.ts",
+      "packages/nextjs/app/api/health/route.ts",
+      ".harness/spec.yaml",
+      ".harness/prd.md"
+    ],
+    "forbidden": [
+      ".env",
+      "packages/nextjs/.env",
+      "packages/foundry/.env",
+      "packages/hardhat"
+    ]
+  },
+  "textAssertions": [
+    {
+      "file": "README.md",
+      "contains": [
+        "npm create scaffold-hbar@latest",
+        "hashscan.io/testnet",
+        "ccip.chain.link"
+      ]
+    },
+    {
+      "file": "AGENTS.md",
+      "contains": [
+        "CrossChainPayroll",
+        "tinybars",
+        "yarn foundry:test"
+      ]
+    },
+    {
+      "file": "packages/foundry/contracts/CrossChainPayroll.sol",
+      "contains": [
+        "scheduleCall",
+        "hasScheduleCapacity",
+        "ccipSend",
+        "getFee"
+      ]
+    }
+  ]
+}

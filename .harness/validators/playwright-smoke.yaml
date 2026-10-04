@@ -1,0 +1,23 @@
+name: ccip-payroll-smoke
+server:
+  command: yarn next:start
+  url: http://localhost:3000
+  timeoutMs: 180000
+defaults:
+  timeoutMs: 45000
+  failOnConsoleError: false
+routes:
+  - name: dashboard
+    path: /
+  - name: payee
+    path: /payee/0xad7B4939Fe1d6ee776FB9Effc541351608752A4E
+  - name: debug
+    path: /debug
+  - name: health
+    path: /api/health
+forbidden:
+  visibleText:
+    - "Application error"
+    - "Unhandled Runtime Error"
+    - "is not deployed on this network"
+    - "isn't deployed on this network"

@@ -1,0 +1,39 @@
+schemaVersion: 2
+
+name: ccip-payroll
+description: >
+  CrossChainPayroll: a Hedera treasury that pays each payee every interval on the chain they choose, on Hedera with a
+  token transfer or on another chain through Chainlink CCIP with the fee paid in native HBAR. After every run the
+  contract schedules its own next run with the Hedera Schedule Service (HIP-1215), so no keeper is involved, and the
+  dashboard tracks each CCIP message from Hedera to its destination.
+
+agent: claude
+
+baseline:
+  commands:
+    - name: install
+      command: yarn install
+    - name: contracts
+      command: yarn foundry:test
+    - name: build
+      command: yarn next:build
+
+validators:
+  playwright: .harness/validators/playwright-smoke.yaml
+
+contract: .harness/acceptance-contract.json
+validator:
+  enabled: true
+
+# Tier 3.5: an ephemeral funded testnet signer exercises the live payroll (tops up its treasury from the public
+# CCIP-BnM faucet and funds it with HBAR) and the harness verifies the effects on the mirror node.
+chainValidation:
+  enabled: true
+  network: testnet
+  operator:
+    accountIdEnv: HEDERA_OPERATOR_ID
+    privateKeyEnv: HEDERA_OPERATOR_KEY
+  fundingHbar: 10
+  sweepBack: true
+  expose:
+    browserLocalStorageKey: burnerWallet.pk

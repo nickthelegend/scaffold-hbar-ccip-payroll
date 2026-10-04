@@ -1,0 +1,61 @@
+{
+  "name": "ccip-payroll",
+  "description": "Cross-chain payroll from a Hedera treasury: pay each contributor on the chain they choose through Chainlink CCIP, with fees in native HBAR, while the contract schedules its own next run with the Hedera Schedule Service. No keeper, no LINK.",
+  "version": "0.1.0",
+  "create-scaffold-hbar": {
+    "capabilities": {
+      "frontend": [
+        "nextjs-app"
+      ],
+      "solidityFramework": [
+        "foundry"
+      ],
+      "packageManager": [
+        "yarn"
+      ]
+    },
+    "defaults": {
+      "frontend": "nextjs-app",
+      "solidityFramework": "foundry",
+      "packageManager": "yarn"
+    },
+    "requirements": {
+      "node": ">=20.18.3"
+    },
+    "outro": {
+      "sections": [
+        {
+          "steps": [
+            {
+              "text": "CrossChainPayroll pays a list of payees every interval, on Hedera or on another chain through Chainlink CCIP, and the Hedera Schedule Service runs it. The dashboard works against the live testnet payroll out of the box."
+            }
+          ]
+        },
+        {
+          "title": "Try it",
+          "steps": [
+            {
+              "label": "Run the contract tests (unit + fuzz), then against the real CCIP router on a Hedera testnet fork",
+              "command": "{run:foundry:test} && {run:foundry:test:testnet} --match-path \"test/fork/*\""
+            },
+            {
+              "label": "Open the payroll dashboard",
+              "command": "{run:next:dev}"
+            },
+            {
+              "label": "Fund a testnet account at the faucet, then create a deployer keystore",
+              "url": "https://portal.hedera.com/faucet"
+            },
+            {
+              "command": "{run:foundry:account:import}"
+            },
+            {
+              "label": "Deploy your own payroll (README → Run your own payroll), add payees and start it from the dashboard",
+              "command": "{run:foundry:deploy} --network hedera_testnet"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

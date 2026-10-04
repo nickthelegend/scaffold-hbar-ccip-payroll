@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (with Foundry libraries)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.18.3
+          cache: yarn
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          # Newer forge sends block tags as EIP-1898 objects, which Hedera's JSON-RPC relay rejects on fork tests.
+          version: v1.7.1
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Lint (ESLint, forge fmt, prettier, tsc)
+        run: yarn lint
+
+      - name: Contract tests
+        run: yarn foundry:test
+
+      - name: Contract tests against the real CCIP router on a Hedera testnet fork
+        run: yarn foundry:test:testnet --match-path "test/fork/*"
+
+      - name: Frontend tests
+        run: yarn next:test
+
+      - name: Build
+        run: yarn next:build
+
+      - name: Install Playwright Chromium (for the harness route gate)
+        run: yarn playwright install --with-deps chromium
+
+      - name: Hedera Harness validate (static checks, yarn commands, Playwright routes)
+        run: yarn harness:validate

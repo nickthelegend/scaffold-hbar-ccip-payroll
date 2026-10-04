@@ -1,0 +1,55 @@
+{
+  "name": "ccip-payroll-acceptance",
+  "assertions": [
+    {
+      "id": "C1",
+      "journey": "dashboard",
+      "route": "/",
+      "severity": "critical",
+      "statement": "The dashboard shows the live payroll: treasury balances, the cost of the next run in HBAR and how many runs the treasury covers.",
+      "howToVerify": "Open /. The Treasury card shows a CCIP-BnM balance, an HBAR balance, a cost per run (tokens plus CCIP fees in HBAR) and 'covers N runs'.",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C2",
+      "journey": "schedule",
+      "route": "/",
+      "severity": "critical",
+      "statement": "The Schedule card shows the next run, a live countdown and the pending Hedera Schedule Service entity.",
+      "howToVerify": "On /, the Schedule card says the payroll is running, shows the next run time with a countdown, and links the pending schedule to hashscan.io/testnet/schedule/0.0.N.",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C3",
+      "journey": "history",
+      "route": "/",
+      "severity": "critical",
+      "statement": "Run history lists each run, whether the Hedera Schedule Service executed it, and every payout with its CCIP message and delivery status.",
+      "howToVerify": "Scroll to Run history. Run #1 is marked as executed by the Hedera Schedule Service and lists a Hedera payout and an Ethereum Sepolia payout whose CCIP message links to ccip.chain.link/msg/<id> with a status.",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C4",
+      "journey": "payee",
+      "route": "/payee/[address]",
+      "severity": "major",
+      "statement": "A payee page lists every payout an address received, across chains.",
+      "howToVerify": "Open /payee/0xad7B4939Fe1d6ee776FB9Effc541351608752A4E. Its Ethereum Sepolia payouts are listed with amounts, CCIP status and links.",
+      "walletRequired": false,
+      "verifiableWithoutCredentials": true
+    },
+    {
+      "id": "C5",
+      "journey": "top-up",
+      "route": "/",
+      "severity": "major",
+      "statement": "Any connected wallet can top up the treasury with CCIP-BnM from the public faucet.",
+      "howToVerify": "Connect the burner wallet (funded testnet account), click 'Add 1 CCIP-BnM' on the Treasury card and confirm. The CCIP-BnM balance rises by 1 after the transaction.",
+      "walletRequired": true,
+      "executableWithTestSigner": true
+    }
+  ]
+}
